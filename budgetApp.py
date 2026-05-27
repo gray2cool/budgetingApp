@@ -31,7 +31,7 @@ class Settings(db.Model):
 with app.app_context():
     db.create_all()
 
-    if not Transaction.query.first():
+    if not Transaction.session.first():
         sample_tx = Transaction(title="Sample Income", amount=1500, type="Income", category="Paycheck")
         sample_goal = BudgetGoal(category="Food", monthly_limit=400)
         sample_settings = Settings(id=1, student_name="Grayson", income_target=2000, currency="$")
@@ -45,7 +45,7 @@ def index():
     current_month = datetime.utcnow().month
     current_year = datetime.utcnow().year
     
-    txs = Transaction.query.filter(
+    txs = Transaction.session.filter(
         db.extract('month', Transaction.date) == current_month,
         db.extract('year', Transaction.date) == current_year
     ).all()
@@ -72,7 +72,7 @@ def transactions():
         db.session.commit()
         return redirect(url_for('transactions'))
 
-    all_transactions = Transaction.query.order_by(Transaction.date.desc()).all()
+    all_transactions = Transaction.session.order_by(Transaction.date.desc()).all()
     return render_template('transactions.html')
 
 @app.route('/goals', methods=['GET', 'POST'])
@@ -81,7 +81,7 @@ def goals():
         category = request.form['category']
         limit = float(request.form['monthly_limit'])
         
-        existing_goal = BudgetGoal.query.filter_by(category=category).first()
+        existing_goal = BudgetGoal.session.filter_by(category=category).first()
         
         if existing_goal:
             existing_goal.monthly_limit = limit
@@ -92,12 +92,12 @@ def goals():
         db.session.commit()
         return redirect(url_for('goals'))
 
-    all_goals = BudgetGoal.query.all()
+    all_goals = BudgetGoal.session.all()
     return render_template('goals.html', goals=all_goals)
 
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
-    settings = Settings.query.get(1)
+    settings = Settings.session.get(1)
     if not settings:
         settings = Settings(id=1)
         db.session.add(settings)

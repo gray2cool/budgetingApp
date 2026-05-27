@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Budget Manager</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; line-height: 1.6; }
+        nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ccc; }
+        nav a { margin-right: 15px; text-decoration: none; color: blue; }
+        .card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; display: inline-block; min-width: 150px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('index') }}">Dashboard</a>
+        <a href="{{ url_for('transactions') }}">Transactions</a>
+        <a href="{{ url_for('goals') }}">Goals</a>
+        <a href="{{ url_for('profile') }}">Profile</a>
+    </nav>
+
+    {% block content %}{% endblock %}
+</body>
+</html>

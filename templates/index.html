@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Monthly Dashboard</h1>
+    <div class="card">
+        <h3>Total Income</h3>
+        <p style="color: green;">{{ income }}</p>
+    </div>
+    <div class="card">
+        <h3>Total Expenses</h3>
+        <p style="color: red;">{{ expenses }}</p>
+    </div>
+    <div class="card">
+        <h3>Net Balance</h3>
+        <p><strong>{{ balance }}</strong></p>
+    </div>
+{% endblock %}

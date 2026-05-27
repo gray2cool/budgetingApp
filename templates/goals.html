@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Budget Goals</h1>
+    <form method="POST">
+        <input type="text" name="category" placeholder="Category (e.g. Food)" required>
+        <input type="number" step="0.01" name="monthly_limit" placeholder="Monthly Limit" required>
+        <button type="submit">Set Goal</button>
+    </form>
+
+    <ul>
+        {% for goal in goals %}
+        <li><strong>{{ goal.category }}:</strong> Max ${{ goal.monthly_limit }} per month</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

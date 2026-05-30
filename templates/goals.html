@@ -1,15 +1,314 @@
 {% extends "base.html" %}
 {% block content %}
-    <h1>Budget Goals</h1>
-    <form method="POST">
-        <input type="text" name="category" placeholder="Category (e.g. Food)" required>
-        <input type="number" step="0.01" name="monthly_limit" placeholder="Monthly Limit" required>
-        <button type="submit">Set Goal</button>
-    </form>
+    <style>
+        /* Card & Layout Enhancements */
+        .goals-container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .sections-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-top: 25px;
+        }
+        .form-section {
+            flex: 1;
+            min-width: 320px;
+        }
+        .analytics-section {
+            flex: 2;
+            min-width: 450px;
+        }
+        .card-panel {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+            margin-bottom: 25px;
+        }
+        .card-panel h2 {
+            margin-top: 0;
+            font-size: 1.4rem;
+            color: #2d3748;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 10px;
+        }
+        
+        /* Modernized Form Control Elements */
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.95rem;
+        }
+        .input-control {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 1rem;
+            border: 1.5px solid #cbd5e0;
+            border-radius: 6px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-control:focus {
+            border-color: #3182ce;
+        }
+        .btn-submit {
+            background-color: #3182ce;
+            color: #ffffff;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 24px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+        .btn-submit:hover {
+            background-color: #2b6cb0;
+        }
 
-    <ul>
-        {% for goal in goals %}
-        <li><strong>{{ goal.category }}:</strong> Max ${{ goal.monthly_limit }} per month</li>
-        {% endfor %}
-    </ul>
+        /* Velocity Widget Visual Design */
+        .velocity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .velocity-item {
+            background-color: #fafbfe;
+            border: 1.5px solid #edf2f7;
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.01);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .velocity-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05);
+        }
+        .velocity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .category-title {
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin: 0;
+        }
+        
+        /* Interactive Badge Status Colors */
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+        .badge-green {
+            background-color: #c6f6d5;
+            color: #22543d;
+        }
+        .badge-yellow {
+            background-color: #fefcbf;
+            color: #744210;
+        }
+        .badge-red {
+            background-color: #fed7d7;
+            color: #742a2a;
+        }
+
+        /* Fluid Gradient Progress Bars */
+        .progress-track {
+            background-color: #edf2f7;
+            border-radius: 8px;
+            height: 12px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 14px;
+            margin-bottom: 4px;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .fill-green {
+            background: linear-gradient(90deg, #48bb78, #38a169);
+        }
+        .fill-yellow {
+            background: linear-gradient(90deg, #ecc94b, #d69e2e);
+        }
+        .fill-red {
+            background: linear-gradient(90deg, #f56565, #e53e3e);
+        }
+
+        .details-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #4a5568;
+            margin-bottom: 6px;
+        }
+        .projection-total {
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+    </style>
+
+    <div class="goals-container">
+        <h1>Student Budget Goals</h1>
+        <p style="color: #718096; margin-bottom: 25px;">Track your financial pace by setting goal limits on categories. The system evaluates your spending speed against defined goals continuously using an append-only transaction event log.</p>
+
+        <div class="sections-wrapper">
+            <!-- Left Side Panel: Set/Update Goal Form -->
+            <div class="form-section">
+                <div class="card-panel">
+                    <h2>Manage Budget Limits</h2>
+                    <form method="POST" style="margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <input type="text" id="category" name="category" class="input-control" placeholder="e.g. Food, Transport" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="monthly_limit">Monthly limit ($)</label>
+                            <input type="number" step="0.01" id="monthly_limit" name="monthly_limit" class="input-control" placeholder="e.g. 350.00" required>
+                        </div>
+                        <button type="submit" class="btn-submit">Set Budget Limit</button>
+                    </form>
+
+                    <h3 style="margin-top: 25px; font-size: 1.1rem; color: #4a5568;">Configured Goal Limits</h3>
+                    <ul style="padding-left: 20px; color: #4a5568;">
+                        {% for goal in goals %}
+                        <li style="margin-bottom: 8px;">
+                            <strong>{{ goal.category }}:</strong> Max ${{ "%.2f"|format(goal.monthly_limit) }} per month
+                        </li>
+                        {% else %}
+                        <li style="color: #a0aec0; font-style: italic; list-style-type: none; margin-left: -20px;">No goals set yet.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Side Panel: Spending Velocity Tracker Dashboard -->
+            <div class="analytics-section">
+                <div class="card-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; margin-bottom: 20px;">
+                        <h2 style="margin: 0; border: none; padding-bottom: 0;">Spending Velocity Tracker</h2>
+                        <span id="syncIndicator" style="font-size: 0.8rem; color: #a0aec0; font-style: italic;">Syncing...</span>
+                    </div>
+
+                    <div id="velocityGrid" class="velocity-grid">
+                        <!-- Instantiated Dynamically via JS fetch logic -->
+                        <div style="text-align: center; padding: 40px; color: #a0aec0; grid-column: 1 / -1;">
+                            <p>Querying and replaying events...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Client Velocity Tracking Engine -->
+    <script>
+        async function fetchSpendingVelocity() {
+            const syncIndicator = document.getElementById('syncIndicator');
+            const velocityGrid = document.getElementById('velocityGrid');
+            
+            try {
+                if (syncIndicator) syncIndicator.textContent = 'Syncing...';
+                
+                const response = await fetch('/api/analytics/velocity');
+                if (!response.ok) throw new Error('API server communications failure');
+                
+                const data = await response.json();
+                
+                if (syncIndicator) {
+                    const now = new Date();
+                    syncIndicator.textContent = `Last Synced: ${now.toLocaleTimeString()}`;
+                }
+
+                velocityGrid.innerHTML = '';
+
+                if (!data.categories || data.categories.length === 0) {
+                    velocityGrid.innerHTML = `
+                        <div style="text-align: center; padding: 30px; color: #718096; font-style: italic; grid-column: 1 / -1; background-color: #fafbfe; border-radius: 8px; border: 1.5px dashed #edf2f7;">
+                            No active goals to monitor. Specify a category goal in the panel on the left to activate forecasting analytics.
+                        </div>
+                    `;
+                    return;
+                }
+
+                data.categories.forEach(item => {
+                    const velocityCard = document.createElement('div');
+                    velocityCard.className = 'velocity-item';
+
+                    // Cap visual progress fill width at 100% to keep display beautiful
+                    const visualProgressWidth = Math.min(item.percentage, 100);
+
+                    // Choose appropriate class name mapping for CSS rules
+                    const statusClass = `badge-${item.status_color}`;
+                    const progressClass = `fill-${item.status_color}`;
+
+                    velocityCard.innerHTML = `
+                        <div class="velocity-header">
+                            <h3 class="category-title">${item.category}</h3>
+                            <span class="status-badge ${statusClass}">${item.status}</span>
+                        </div>
+                        
+                        <div style="margin-top: 10px;">
+                            <div class="details-row">
+                                <span>Total Spent:</span>
+                                <span style="font-weight: 600; color: #2d3748;">$${item.total_spent.toFixed(2)}</span>
+                            </div>
+                            <div class="details-row">
+                                <span>Pace (Daily Avg):</span>
+                                <span style="color: #4a5568;">$${item.daily_average.toFixed(2)}/day</span>
+                            </div>
+                            <div class="details-row" style="border-top: 1px dashed #e2e8f0; padding-top: 6px; margin-top: 6px;">
+                                <span style="font-weight: 500;">Projected Month-End:</span>
+                                <span class="projection-total" style="color: ${item.status_color === 'red' ? '#e53e3e' : '#2d3748'};">
+                                    $${item.projected_spend.toFixed(2)}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="progress-track">
+                            <div class="progress-fill ${progressClass}" style="width: ${visualProgressWidth}%"></div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #718096; margin-top: 4px;">
+                            <span>${item.percentage.toFixed(1)}% of limit</span>
+                            <span>Limit: $${item.monthly_limit.toFixed(2)}</span>
+                        </div>
+                    `;
+
+                    velocityGrid.appendChild(velocityCard);
+                });
+
+            } catch (error) {
+                console.error('Error fetching velocity calculations:', error);
+                if (syncIndicator) syncIndicator.textContent = 'Connection Error';
+                velocityGrid.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #e53e3e; grid-column: 1 / -1; background-color: #fff5f5; border-radius: 8px; border: 1.5px solid #fed7d7;">
+                        Failed to compute velocities. Verify that the Flask application and database are running correctly.
+                    </div>
+                `;
+            }
+        }
+
+        // Query instantly on load
+        document.addEventListener('DOMContentLoaded', fetchSpendingVelocity);
+    </script>
 {% endblock %}

@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
     <style>
-        /* Card & Layout Enhancements */
         .goals-container {
             max-width: 1100px;
             margin: 0 auto;
@@ -36,7 +35,6 @@
             padding-bottom: 10px;
         }
         
-        /* Modernized Form Control Elements */
         .form-group {
             margin-bottom: 18px;
         }
@@ -76,7 +74,6 @@
             background-color: #2b6cb0;
         }
 
-        /* Velocity Widget Visual Design */
         .velocity-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -107,7 +104,6 @@
             margin: 0;
         }
         
-        /* Interactive Badge Status Colors */
         .status-badge {
             font-size: 0.75rem;
             font-weight: 800;
@@ -128,8 +124,6 @@
             background-color: #fed7d7;
             color: #742a2a;
         }
-
-        /* Fluid Gradient Progress Bars */
         .progress-track {
             background-color: #edf2f7;
             border-radius: 8px;
@@ -172,7 +166,6 @@
         <p style="color: #718096; margin-bottom: 25px;">Track your financial pace by setting goal limits on categories. The system evaluates your spending speed against defined goals continuously using an append-only transaction event log.</p>
 
         <div class="sections-wrapper">
-            <!-- Left Side Panel: Set/Update Goal Form -->
             <div class="form-section">
                 <div class="card-panel">
                     <h2>Manage Budget Limits</h2>
@@ -201,7 +194,6 @@
                 </div>
             </div>
 
-            <!-- Right Side Panel: Spending Velocity Tracker Dashboard -->
             <div class="analytics-section">
                 <div class="card-panel">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; margin-bottom: 20px;">
@@ -210,7 +202,6 @@
                     </div>
 
                     <div id="velocityGrid" class="velocity-grid">
-                        <!-- Instantiated Dynamically via JS fetch logic -->
                         <div style="text-align: center; padding: 40px; color: #a0aec0; grid-column: 1 / -1;">
                             <p>Querying and replaying events...</p>
                         </div>
@@ -220,7 +211,6 @@
         </div>
     </div>
 
-    <!-- Live Client Velocity Tracking Engine -->
     <script>
         async function fetchSpendingVelocity() {
             const syncIndicator = document.getElementById('syncIndicator');
@@ -254,10 +244,8 @@
                     const velocityCard = document.createElement('div');
                     velocityCard.className = 'velocity-item';
 
-                    // Cap visual progress fill width at 100% to keep display beautiful
                     const visualProgressWidth = Math.min(item.percentage, 100);
 
-                    // Choose appropriate class name mapping for CSS rules
                     const statusClass = `badge-${item.status_color}`;
                     const progressClass = `fill-${item.status_color}`;
 
@@ -307,8 +295,6 @@
                 `;
             }
         }
-
-        // Query instantly on load
         document.addEventListener('DOMContentLoaded', fetchSpendingVelocity);
     </script>
 {% endblock %}

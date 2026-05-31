@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 import json
@@ -97,7 +97,7 @@ def transactions():
     if request.method == 'POST':
         title=request.form['title'],
         amount=float(request.form['amount']),
-        type=request.form['type'],
+        type_=request.form['type'],
         category=request.form['category']
         tx_date = datetime.now(timezone.utc)
 

@@ -1,16 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
-    <h1>Monthly Dashboard</h1>
-    <div class="card">
-        <h3>Total Income</h3>
-        <p style="color: green;">{{ income }}</p>
-    </div>
-    <div class="card">
-        <h3>Total Expenses</h3>
-        <p style="color: red;">{{ expenses }}</p>
-    </div>
-    <div class="card">
-        <h3>Net Balance</h3>
-        <p><strong>{{ balance }}</strong></p>
+    <h1 style="text-align: center; color: #2d3748;">Monthly Dashboard</h1>
+    
+    <div style="display: flex; justify-content: center; gap: 40px; margin-top: 50px; flex-wrap: wrap;">
+        <div class="card" style="padding: 40px 30px; min-width: 250px; text-align: center; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: white;">
+            <h3 style="margin-top: 0; color: #4a5568; font-size: 1.4rem;">Total Income</h3>
+            <p style="color: green; font-size: 2.5rem; margin: 15px 0 0 0; font-weight: bold;">${{ "%.2f"|format(income) }}</p>
+        </div>
+        
+        <div class="card" style="padding: 40px 30px; min-width: 250px; text-align: center; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: white;">
+            <h3 style="margin-top: 0; color: #4a5568; font-size: 1.4rem;">Total Expenses</h3>
+            <p style="color: red; font-size: 2.5rem; margin: 15px 0 0 0; font-weight: bold;">${{ "%.2f"|format(expenses) }}</p>
+        </div>
+        
+        <div class="card" style="padding: 40px 30px; min-width: 250px; text-align: center; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: #f8f9fa;">
+            <h3 style="margin-top: 0; color: #2d3748; font-size: 1.4rem;">Net Balance</h3>
+            <p style="font-size: 2.5rem; margin: 15px 0 0 0; font-weight: bold;">${{ "%.2f"|format(balance) }}</p>
+        </div>
     </div>
 {% endblock %}

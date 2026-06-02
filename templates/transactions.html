@@ -21,16 +21,24 @@
                 <th>Category</th>
                 <th>Amount</th>
                 <th>Type</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody id="txBody">
             {% for tx in transactions %}
-            <tr>
+            <tr id="row-{{ tx.id }}">
                 <td>{{ tx.date.strftime('%Y-%m-%d') }}</td>
                 <td>{{ tx.title }}</td>
                 <td>{{ tx.category }}</td>
                 <td>{{ tx.amount }}</td>
-                <td>{{ tx.type }}</td>
+                <td style="padding: 12px;">
+                    <span style="color: {{ 'green' if tx.type|upper == 'INCOME' else 'red' }}; font-weight: bold;">
+                        {{ tx.type }}
+                    </span>
+                </td>
+                <td style="padding: 12px; text-align: center;">
+                    <button onclick="deleteRow({{ tx.id }})" style="background: none; border: none; color: #a0aec0; font-size: 1.2rem; cursor: pointer; font-weight: bold;" title="Delete">✕</button>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -47,18 +55,21 @@
             });
 
             if (response.ok) {
-                // Update Table Dynamically
-                const tbody = document.getElementById('txBody');
-                const row = tbody.insertRow(0);
-                row.innerHTML = `
-                    <td>Just Now</td>
-                    <td>${formData.get('title')}</td>
-                    <td>${formData.get('category')}</td>
-                    <td>${formData.get('amount')}</td>
-                    <td>${formData.get('type')}</td>
-                `;
-                e.target.reset();
+                // To maintain sync with the page reload loop, reloading guarantees accurate DB representations
+                window.location.reload(); 
             }
         };
+
+        async function deleteRow(id) {
+            if (confirm("Are you sure you want to delete this transaction?")) {
+                const response = await fetch(`/delete_tx/${id}`, { method: 'POST' });
+                if (response.ok) {
+                    const row = document.getElementById(`row-${id}`);
+                    if (row) row.remove(); // Removes it from the screen instantly
+                } else {
+                    alert("Failed to delete transaction.");
+                }
+            }
+        }
     </script>
 {% endblock %}

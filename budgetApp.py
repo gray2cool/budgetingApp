@@ -8,11 +8,9 @@ app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Heygray001,,@localhost/budget_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = 'super_secret_budget_key' # Required for Flask sessions
+app.secret_key = 'super_secret_budget_key'
 
 db = SQLAlchemy(app)
-
-# --- MODELS ---
 
 class EventLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -36,15 +34,12 @@ class BudgetGoal(db.Model):
     category = db.Column(db.String(50), nullable=False)
     monthly_limit = db.Column(db.Float, nullable=False)
 
-# Upgraded from Settings to User for authentication
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_name = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
     income_target = db.Column(db.Float, default=0.0)
     currency = db.Column(db.String(5), default="$")
-
-# --- INITIALIZATION ---
 
 with app.app_context():
     db.create_all()
@@ -57,19 +52,14 @@ with app.app_context():
         db.session.commit()
         print("Database seeded with sample data!")
 
-# --- AUTHENTICATION HOOK ---
-
 @app.before_request
 def require_login():
-    # Force users to login page if they don't have an active session
     allowed_routes = ['login', 'static']
     if request.endpoint not in allowed_routes and 'student_name' not in session:
         return redirect(url_for('login'))
 
 def get_current_user():
     return session.get('student_name')
-
-# --- ROUTES ---
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -83,7 +73,6 @@ def login():
         user = db.session.query(User).filter_by(student_name=student_name).first()
         
         if user:
-            # Login existing user
             if user.password == password:
                 user.income_target = income_target
                 user.currency = currency
@@ -93,7 +82,6 @@ def login():
             else:
                 error = "Incorrect password for this user."
         else:
-            # Register new user
             new_user = User(
                 student_name=student_name, 
                 password=password, 
@@ -160,10 +148,7 @@ def transactions():
 def delete_tx(id):
     current_user = get_current_user()
     tx = db.session.get(Transaction, id)
-    
-    # Ensure a user can only delete their own transactions
     if tx and tx.student_name == current_user:
-        # 1. Log the deletion event so the Velocity Tracker knows to subtract it
         event_payload = {
             "title": tx.title,
             "amount": tx.amount,
@@ -177,8 +162,6 @@ def delete_tx(id):
             payload=json.dumps(event_payload)
         )
         db.session.add(deletion_event)
-        
-        # 2. Delete the actual transaction record
         db.session.delete(tx)
         db.session.commit()
         return '', 200
@@ -215,7 +198,6 @@ def api_analytics_velocity():
     days_elapsed = max(now.day, 1)
     _, total_days_in_month = calendar.monthrange(now.year, now.month)
     
-    # FETCH BOTH CREATED AND DELETED EVENTS
     expense_events = db.session.query(EventLog).filter(
         EventLog.student_name == current_user,
         EventLog.event_type.in_(['TRANSACTION_CREATED', 'TRANSACTION_DELETED'])
@@ -235,7 +217,6 @@ def api_analytics_velocity():
                     category = payload.get('category', 'MISCELLANEOUS').upper()
                     amount = float(payload.get('amount', 0.0))
                     
-                    # Add if created, subtract if deleted
                     if event.event_type == 'TRANSACTION_CREATED':
                         monthly_category_spending[category] = monthly_category_spending.get(category, 0.0) + amount
                         total_all_expenses += amount
@@ -246,7 +227,6 @@ def api_analytics_velocity():
         except (ValueError, TypeError, json.JSONDecodeError):
             continue
 
-    # Fetch user to get global income target
     user = db.session.query(User).filter_by(student_name=current_user).first()
     income_target = user.income_target if user else 0.0
 
@@ -257,8 +237,6 @@ def api_analytics_velocity():
 
     velocity_analytics_response = []
     
-    # 1. GENERATE THE GLOBAL INCOME TARGET GOAL
-    # (Prevent negative totals if someone deletes more than they added somehow)
     total_all_expenses = max(0, total_all_expenses)
     
     daily_avg_all = total_all_expenses / days_elapsed
@@ -283,7 +261,6 @@ def api_analytics_velocity():
         "status_color": color_all
     })
 
-    # 2. GENERATE THE INDIVIDUAL CATEGORY GOALS
     for category, monthly_limit in active_budget_goals.items():
         total_spent = max(0, monthly_category_spending.get(category, 0.0))
         daily_average = total_spent / days_elapsed

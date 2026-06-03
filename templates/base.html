@@ -4,21 +4,32 @@
     <meta charset="UTF-8">
     <title>Budget Manager</title>
     <style>
-        body { font-family: sans-serif; margin: 40px; line-height: 1.6; }
-        nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ccc; }
-        nav a { margin-right: 15px; text-decoration: none; color: blue; }
-        .card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; display: inline-block; min-width: 150px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f4f4f4; }
+        body { font-family: sans-serif; margin: 40px; line-height: 1.6; background-color: #f7fafc; }
+        nav { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
+        .nav-links a { margin-right: 15px; text-decoration: none; color: #3182ce; font-weight: bold; }
+        .nav-links a:hover { color: #2b6cb0; text-decoration: underline; }
+        .user-menu { font-size: 0.9rem; color: #4a5568; }
+        .logout-btn { color: #e53e3e; text-decoration: none; font-weight: bold; margin-left: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        th { background-color: #edf2f7; color: #4a5568; }
     </style>
 </head>
 <body>
     <nav>
-        <a href="{{ url_for('index') }}">Dashboard</a>
-        <a href="{{ url_for('transactions') }}">Transactions</a>
-        <a href="{{ url_for('goals') }}">Goals</a>
-        <a href="{{ url_for('profile') }}">Profile</a>
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}">Dashboard</a>
+            <a href="{{ url_for('transactions') }}">Transactions</a>
+            <a href="{{ url_for('goals') }}">Goals</a>
+            </div>
+        <div class="user-menu">
+            {% if session.get('student_name') %}
+                Logged in as: <strong>{{ session['student_name'] }}</strong>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" style="color: #3182ce; font-weight: bold; text-decoration: none;">Sign In</a>
+            {% endif %}
+        </div>
     </nav>
 
     {% block content %}{% endblock %}

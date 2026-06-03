@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+    <div style="max-width: 450px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+        <h1 style="text-align: center; color: #2d3748; margin-top: 0;">Sign In</h1>
+        <p style="text-align: center; color: #718096; margin-bottom: 25px; font-size: 0.9rem;">
+            Enter your name to login. If you are new, an account will be created automatically.
+        </p>
+
+        {% if error %}
+            <div style="background: #fed7d7; color: #c53030; padding: 10px; border-radius: 5px; margin-bottom: 20px; text-align: center;">
+                <strong>Error:</strong> {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="POST">
+            <label style="font-weight: bold; color: #4a5568;">Student Name:</label><br>
+            <input type="text" name="student_name" required style="width: 100%; padding: 10px; margin: 8px 0 20px 0; border: 1px solid #cbd5e0; border-radius: 5px; box-sizing: border-box;"><br>
+            
+            <label style="font-weight: bold; color: #4a5568;">Password:</label><br>
+            <input type="password" name="password" required style="width: 100%; padding: 10px; margin: 8px 0 20px 0; border: 1px solid #cbd5e0; border-radius: 5px; box-sizing: border-box;"><br>
+            
+            <label style="font-weight: bold; color: #4a5568;">Monthly Income Target:</label><br>
+            <input type="number" step="0.01" name="income_target" required style="width: 100%; padding: 10px; margin: 8px 0 20px 0; border: 1px solid #cbd5e0; border-radius: 5px; box-sizing: border-box;"><br>
+            
+            <label style="font-weight: bold; color: #4a5568;">Currency Symbol:</label><br>
+            <input type="text" name="currency" value="$" maxlength="5" style="width: 100%; padding: 10px; margin: 8px 0 25px 0; border: 1px solid #cbd5e0; border-radius: 5px; box-sizing: border-box;"><br>
+            
+            <button type="submit" style="width: 100%; background-color: #3182ce; color: white; padding: 12px; font-size: 1rem; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">
+                Secure Login
+            </button>
+        </form>
+    </div>
+{% endblock %}

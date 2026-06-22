@@ -73,6 +73,20 @@
         .btn-submit:hover {
             background-color: #2b6cb0;
         }
+        .btn-add-cat {
+            background-color: #edf2f7;
+            color: #4a5568;
+            font-weight: bold;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+        .btn-add-cat:hover {
+            background-color: #e2e8f0;
+        }
 
         .velocity-grid {
             display: grid;
@@ -172,7 +186,16 @@
                     <form method="POST" style="margin-bottom: 20px;">
                         <div class="form-group">
                             <label for="category">Category</label>
-                            <input type="text" id="category" name="category" class="input-control" placeholder="e.g. Food, Transport" required>
+                            <div style="display: flex; gap: 8px;">
+                                <select id="category" name="category" class="input-control" required>
+                                    <option value="" disabled selected>Select Category</option>
+                                    <option value="FOOD">Food</option>
+                                    <option value="TRANSPORT">Transport</option>
+                                    <option value="ENTERTAINMENT">Entertainment</option>
+                                    <option value="UTILITIES">Utilities</option>
+                                </select>
+                                <button type="button" onclick="addCategory('category')" class="btn-add-cat">+ Category</button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="monthly_limit">Monthly limit ($)</label>
@@ -212,6 +235,25 @@
     </div>
 
     <script>
+        function addCategory(selectId) {
+            const newCat = prompt("Enter new category name:");
+            if (newCat && newCat.trim() !== "") {
+                const val = newCat.trim().toUpperCase();
+                const select = document.getElementById(selectId);
+                let exists = false;
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value === val) exists = true;
+                }
+                if (!exists) {
+                    const option = document.createElement("option");
+                    option.value = val;
+                    option.text = newCat.trim();
+                    select.add(option);
+                }
+                select.value = val;
+            }
+        }
+
         async function fetchSpendingVelocity() {
             const syncIndicator = document.getElementById('syncIndicator');
             const velocityGrid = document.getElementById('velocityGrid');
@@ -243,45 +285,82 @@
                 data.categories.forEach(item => {
                     const velocityCard = document.createElement('div');
                     velocityCard.className = 'velocity-item';
-
-                    const visualProgressWidth = Math.min(item.percentage, 100);
-
                     const statusClass = `badge-${item.status_color}`;
-                    const progressClass = `fill-${item.status_color}`;
 
-                    velocityCard.innerHTML = `
-                        <div class="velocity-header">
-                            <h3 class="category-title">${item.category}</h3>
-                            <span class="status-badge ${statusClass}">${item.status}</span>
-                        </div>
-                        
-                        <div style="margin-top: 10px;">
-                            <div class="details-row">
-                                <span>Total Spent:</span>
-                                <span style="font-weight: 600; color: #2d3748;">$${item.total_spent.toFixed(2)}</span>
-                            </div>
-                            <div class="details-row">
-                                <span>Pace (Daily Avg):</span>
-                                <span style="color: #4a5568;">$${item.daily_average.toFixed(2)}/day</span>
-                            </div>
-                            <div class="details-row" style="border-top: 1px dashed #e2e8f0; padding-top: 6px; margin-top: 6px;">
-                                <span style="font-weight: 500;">Projected Month-End:</span>
-                                <span class="projection-total" style="color: ${item.status_color === 'red' ? '#e53e3e' : '#2d3748'};">
-                                    $${item.projected_spend.toFixed(2)}
-                                </span>
-                            </div>
-                        </div>
+                    if (item.is_income_tracker) {
+                        const maxScale = Math.max(item.target, item.total_income, item.total_spent, 1);
+                        const incomePercent = Math.min((item.total_income / maxScale) * 100, 100);
+                        const expensePercent = Math.min((item.total_spent / maxScale) * 100, 100);
 
-                        <div class="progress-track">
-                            <div class="progress-fill ${progressClass}" style="width: ${visualProgressWidth}%"></div>
-                        </div>
-                        
-                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #718096; margin-top: 4px;">
-                            <span>${item.percentage.toFixed(1)}% of limit</span>
-                            <span>Limit: $${item.monthly_limit.toFixed(2)}</span>
-                        </div>
-                    `;
+                        velocityCard.innerHTML = `
+                            <div class="velocity-header">
+                                <h3 class="category-title">${item.category}</h3>
+                                <span class="status-badge ${statusClass}">${item.status}</span>
+                            </div>
+                            
+                            <div style="margin-top: 10px;">
+                                <div class="details-row">
+                                    <span>Reported Income:</span>
+                                    <span style="font-weight: 600; color: #38a169;">$${item.total_income.toFixed(2)}</span>
+                                </div>
+                                <div class="details-row">
+                                    <span>Reported Expenses:</span>
+                                    <span style="font-weight: 600; color: #e53e3e;">$${item.total_spent.toFixed(2)}</span>
+                                </div>
+                                <div class="details-row" style="border-top: 1px dashed #e2e8f0; padding-top: 6px; margin-top: 6px;">
+                                    <span style="font-weight: 500;">Net Balance:</span>
+                                    <span class="projection-total" style="color: ${item.status_color === 'red' ? '#e53e3e' : '#2d3748'};">
+                                        $${item.net_balance.toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
 
+                            <div style="position: relative; height: 18px; background: #edf2f7; border-radius: 8px; overflow: hidden; margin-top: 14px; margin-bottom: 4px;">
+                                <div style="position: absolute; left: 0; top: 0; height: 100%; width: ${incomePercent}%; background: linear-gradient(90deg, #48bb78, #38a169); z-index: 1;"></div>
+                                <div style="position: absolute; left: 0; top: 0; height: 100%; width: ${expensePercent}%; background: linear-gradient(90deg, #f56565, #e53e3e); z-index: 2; opacity: 0.85;"></div>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #718096; margin-top: 4px;">
+                                <span>Discretionary Target: $${item.target.toFixed(2)}</span>
+                            </div>
+                        `;
+                    } else {
+                        const visualProgressWidth = Math.min(item.percentage, 100);
+                        const progressClass = `fill-${item.status_color}`;
+
+                        velocityCard.innerHTML = `
+                            <div class="velocity-header">
+                                <h3 class="category-title">${item.category}</h3>
+                                <span class="status-badge ${statusClass}">${item.status}</span>
+                            </div>
+                            
+                            <div style="margin-top: 10px;">
+                                <div class="details-row">
+                                    <span>Total Spent:</span>
+                                    <span style="font-weight: 600; color: #2d3748;">$${item.total_spent.toFixed(2)}</span>
+                                </div>
+                                <div class="details-row">
+                                    <span>Pace (Weekly Avg):</span>
+                                    <span style="color: #4a5568;">$${item.weekly_average.toFixed(2)}/wk</span>
+                                </div>
+                                <div class="details-row" style="border-top: 1px dashed #e2e8f0; padding-top: 6px; margin-top: 6px;">
+                                    <span style="font-weight: 500;">Projected Month-End:</span>
+                                    <span class="projection-total" style="color: ${item.status_color === 'red' ? '#e53e3e' : '#2d3748'};">
+                                        $${item.projected_spend.toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="progress-track">
+                                <div class="progress-fill ${progressClass}" style="width: ${visualProgressWidth}%"></div>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #718096; margin-top: 4px;">
+                                <span>${item.percentage.toFixed(1)}% of limit</span>
+                                <span>Limit: $${item.monthly_limit.toFixed(2)}</span>
+                            </div>
+                        `;
+                    }
                     velocityGrid.appendChild(velocityCard);
                 });
 

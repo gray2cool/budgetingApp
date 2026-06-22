@@ -197,32 +197,40 @@ def api_analytics_velocity():
     now = datetime.now(timezone.utc)
     days_elapsed = max(now.day, 1)
     _, total_days_in_month = calendar.monthrange(now.year, now.month)
+    weeks_elapsed = days_elapsed / 7.0 if days_elapsed > 0 else 1.0
     
-    expense_events = db.session.query(EventLog).filter(
+    month_events = db.session.query(EventLog).filter(
         EventLog.student_name == current_user,
         EventLog.event_type.in_(['TRANSACTION_CREATED', 'TRANSACTION_DELETED'])
     ).all()
     
     monthly_category_spending = {}
     total_all_expenses = 0.0 
+    total_income = 0.0
     
-    for event in expense_events:
+    for event in month_events:
         try:
             payload = json.loads(event.payload)
-            if payload.get('type', '').upper() == 'EXPENSE':
-                tx_date_str = payload.get('date')
-                tx_date = datetime.fromisoformat(tx_date_str.replace('Z', '+00:00')) if tx_date_str else event.timestamp
+            tx_date_str = payload.get('date')
+            tx_date = datetime.fromisoformat(tx_date_str.replace('Z', '+00:00')) if tx_date_str else event.timestamp
+            
+            if tx_date.year == now.year and tx_date.month == now.month:
+                tx_type = payload.get('type', '').upper()
+                amount = float(payload.get('amount', 0.0))
                 
-                if tx_date.year == now.year and tx_date.month == now.month:
+                if tx_type == 'EXPENSE':
                     category = payload.get('category', 'MISCELLANEOUS').upper()
-                    amount = float(payload.get('amount', 0.0))
-                    
                     if event.event_type == 'TRANSACTION_CREATED':
                         monthly_category_spending[category] = monthly_category_spending.get(category, 0.0) + amount
                         total_all_expenses += amount
                     elif event.event_type == 'TRANSACTION_DELETED':
                         monthly_category_spending[category] = monthly_category_spending.get(category, 0.0) - amount
                         total_all_expenses -= amount
+                elif tx_type == 'INCOME':
+                    if event.event_type == 'TRANSACTION_CREATED':
+                        total_income += amount
+                    elif event.event_type == 'TRANSACTION_DELETED':
+                        total_income -= amount
                         
         except (ValueError, TypeError, json.JSONDecodeError):
             continue
@@ -238,33 +246,28 @@ def api_analytics_velocity():
     velocity_analytics_response = []
     
     total_all_expenses = max(0, total_all_expenses)
+    total_income = max(0, total_income)
+    net_balance = total_income - total_all_expenses
     
-    daily_avg_all = total_all_expenses / days_elapsed
-    proj_all = daily_avg_all * total_days_in_month
-    perc_all = (proj_all / income_target * 100.0) if income_target > 0 else 0.0
-    
-    if perc_all < 80.0:
-        status_all, color_all = "On Track", "green"
-    elif perc_all <= 100.0:
-        status_all, color_all = "Watch Out", "yellow"
-    else:
-        status_all, color_all = "Over Budget", "red"
+    is_income_target_met = net_balance >= income_target
+    status_all = "On Track" if is_income_target_met else "Over Budget"
+    color_all = "green" if is_income_target_met else "red"
 
     velocity_analytics_response.append({
         "category": "INCOME TARGET",
-        "monthly_limit": round(income_target, 2),
+        "is_income_tracker": True,
+        "target": round(income_target, 2),
+        "total_income": round(total_income, 2),
         "total_spent": round(total_all_expenses, 2),
-        "daily_average": round(daily_avg_all, 2),
-        "projected_spend": round(proj_all, 2),
-        "percentage": round(perc_all, 1),
+        "net_balance": round(net_balance, 2),
         "status": status_all,
         "status_color": color_all
     })
 
     for category, monthly_limit in active_budget_goals.items():
         total_spent = max(0, monthly_category_spending.get(category, 0.0))
-        daily_average = total_spent / days_elapsed
-        projected_spend = daily_average * total_days_in_month
+        weekly_average = total_spent / weeks_elapsed
+        projected_spend = (total_spent / days_elapsed) * total_days_in_month 
         
         projected_percent = (projected_spend / monthly_limit * 100.0) if monthly_limit > 0 else 0.0
         
@@ -277,9 +280,10 @@ def api_analytics_velocity():
             
         velocity_analytics_response.append({
             "category": category,
+            "is_income_tracker": False,
             "monthly_limit": round(monthly_limit, 2),
             "total_spent": round(total_spent, 2),
-            "daily_average": round(daily_average, 2),
+            "weekly_average": round(weekly_average, 2),
             "projected_spend": round(projected_spend, 2),
             "percentage": round(projected_percent, 1),
             "status": status,
@@ -288,5 +292,47 @@ def api_analytics_velocity():
         
     return jsonify({"categories": velocity_analytics_response})
 
+@app.route('/api/analytics/cashflow', methods=['GET'])
+def api_analytics_cashflow():
+    current_user = get_current_user()
+    now = datetime.now(timezone.utc)
+    _, total_days_in_month = calendar.monthrange(now.year, now.month)
+    
+    txs = db.session.query(Transaction).filter(
+        Transaction.student_name == current_user,
+        db.extract('month', Transaction.date) == now.month,
+        db.extract('year', Transaction.date) == now.year
+    ).order_by(Transaction.date).all()
+
+    labels = []
+    income_data = []
+    expense_data = []
+
+    cumulative_income = 0.0
+    cumulative_expense = 0.0
+
+    for day in range(1, total_days_in_month + 1):
+        labels.append(str(day))
+        
+        if day <= now.day:
+            day_txs = [t for t in txs if t.date.day == day]
+            for tx in day_txs:
+                if tx.type.upper() == 'INCOME':
+                    cumulative_income += tx.amount
+                elif tx.type.upper() == 'EXPENSE':
+                    cumulative_expense += tx.amount
+            
+            income_data.append(round(cumulative_income, 2))
+            expense_data.append(round(cumulative_expense, 2))
+        else:
+            income_data.append(None)
+            expense_data.append(None)
+
+    return jsonify({
+        "labels": labels,
+        "income": income_data,
+        "expense": expense_data
+    })
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

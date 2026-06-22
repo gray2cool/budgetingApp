@@ -18,4 +18,107 @@
             <p style="font-size: 2.5rem; margin: 15px 0 0 0; font-weight: bold;">${{ "%.2f"|format(balance) }}</p>
         </div>
     </div>
+
+    <div style="margin-top: 60px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 1000px; margin-left: auto; margin-right: auto;">
+        <h2 style="margin-top: 0; color: #2d3748; text-align: center; margin-bottom: 25px;">Cumulative Cash Flow Trend (This Month)</h2>
+        <canvas id="cashFlowChart" height="100"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const response = await fetch('/api/analytics/cashflow');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                
+                const ctx = document.getElementById('cashFlowChart').getContext('2d');
+                
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [
+                            {
+                                label: 'Cumulative Income',
+                                data: data.income,
+                                borderColor: '#38a169', 
+                                backgroundColor: 'rgba(56, 161, 105, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: 'Cumulative Expenses',
+                                data: data.expense,
+                                borderColor: '#e53e3e', 
+                                backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Day',
+                                    color: '#2d3748',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                },
+                                ticks: {
+                                    maxRotation: 0, // Forces the numbers to sit perfectly horizontal (no slant)
+                                    minRotation: 0,
+                                    autoSkip: false // Ensures it tries to show all numbers if space permits
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value;
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('en-US', { 
+                                                style: 'currency', 
+                                                currency: 'USD' 
+                                            }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Failed to load cash flow chart:", error);
+            }
+        });
+    </script>
 {% endblock %}
